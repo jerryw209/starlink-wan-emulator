@@ -15,8 +15,11 @@ if [[ -z "$UPSTREAM_IFACE" ]]; then
   UPSTREAM_IFACE=$(ip route show default | awk '/default/ {print $5; exit}')
 fi
 
-echo "Stopping gRPC mock server (if running)"
-pkill -f "spacex_mock_server.py" 2>/dev/null || true
+echo "Stopping gRPC mock server (WAN1)"
+if [[ -f /run/starlink1-grpc.pid ]]; then
+  kill "$(cat /run/starlink1-grpc.pid)" 2>/dev/null || true
+  rm -f /run/starlink1-grpc.pid
+fi
 
 echo "Stopping dnsmasq instance used by emulator"
 PID_FILE="/run/dnsmasq-starlinkwan.pid"
