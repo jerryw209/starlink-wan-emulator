@@ -108,7 +108,8 @@ echo "[7/7] Start gRPC mock server inside namespace"
 pkill -f "spacex_mock_server.*starlink2" 2>/dev/null || true
 
 GRPC_ABS="$(realpath "$GRPC_DIR")"
-ip netns exec "$NETNS" bash -c "cd '$GRPC_ABS' && python3 spacex_mock_server.py --listen ${DISH_IP}:9200" &
+nohup ip netns exec "$NETNS" bash -c "cd '$GRPC_ABS' && setsid python3 spacex_mock_server.py --listen ${DISH_IP}:9200" \
+  </dev/null >/var/log/starlink2-grpc.log 2>&1 &
 GRPC_PID=$!
 echo "$GRPC_PID" > /run/starlink2-grpc.pid
 

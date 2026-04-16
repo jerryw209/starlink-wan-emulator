@@ -48,7 +48,8 @@ start_wan1() {
     echo "WAN1 gRPC 已在執行中，跳過"
   else
     cd "$GRPC_DIR"
-    python3 spacex_mock_server.py --listen 192.168.100.1:9200 &
+    nohup setsid python3 spacex_mock_server.py --listen 192.168.100.1:9200 \
+      </dev/null >/var/log/starlink1-grpc.log 2>&1 &
     GRPC_PID=$!
     echo "$GRPC_PID" > /run/starlink1-grpc.pid
     echo "WAN1 gRPC mock 已啟動 (PID $GRPC_PID)"
