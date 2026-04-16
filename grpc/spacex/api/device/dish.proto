@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package SpaceX.API.Device;
+
+import "spacex/api/device/common.proto";
+
+message DishStowRequest {
+	optional bool unstow = 1;
+}
+
+message DishStowResponse {}
+
+message DishGetContextRequest {}
+
+message DishGetContextResponse {
+	optional DeviceInfo device_info = 1;
+	optional DeviceState device_state = 7;
+	optional float obstruction_fraction = 2;
+	optional float obstruction_valid_s = 3;
+	optional uint32 cell_id = 4;
+	optional uint32 pop_rack_id = 5;
+	optional uint32 initial_satellite_id = 8;
+	optional uint32 initial_gateway_id = 9;
+	optional bool on_backup_beam = 10;
+	optional float seconds_to_slot_end = 6;
+}
+
+message DishGetHistoryResponse {
+	optional uint64 current = 1;
+	repeated float pop_ping_drop_rate = 1001;
+	repeated float pop_ping_latency_ms = 1002;
+	repeated float downlink_throughput_bps = 1003;
+	repeated float uplink_throughput_bps = 1004;
+	repeated float snr = 1005;
+	repeated bool scheduled = 1006;
+	repeated bool obstructed = 1007;
+}
+
+message DishGetStatusResponse {
+	optional DeviceInfo device_info = 1;
+	optional DeviceState device_state = 2;
+	optional DishState state = 1006;
+	optional DishAlerts alerts = 1005;
+	optional float snr = 1001;
+	optional float seconds_to_first_nonempty_slot = 1002;
+	optional float pop_ping_drop_rate = 1003;
+	optional float downlink_throughput_bps = 1007;
+	optional float uplink_throughput_bps = 1008;
+	optional float pop_ping_latency_ms = 1009;
+	optional DishObstructionStats obstruction_stats = 1004;
+	optional bool stow_requested = 1010;
+}
+
+message DishGetObstructionMapRequest {}
+
+message DishGetObstructionMapResponse {
+	optional uint32 num_rows = 1;
+	optional uint32 num_cols = 2;
+	repeated float snr = 3;
+}
+
+message DishAlerts {
+	optional bool motors_stuck = 1;
+	optional bool thermal_throttle = 3;
+	optional bool thermal_shutdown = 2;
+	optional bool mast_not_near_vertical = 5;
+	optional bool unexpected_location = 4;
+	optional bool slow_ethernet_speeds = 6;
+}
+
+message DishObstructionStats {
+	optional bool currently_obstructed = 5;
+	optional float fraction_obstructed = 1;
+	optional float last_24h_obstructed_s = 1006;
+	optional float valid_s = 4;
+	repeated float wedge_fraction_obstructed = 2;
+	repeated float wedge_abs_fraction_obstructed = 3;
+}
+
+message DishAuthenticateResponse {
+	optional ChallengeResponse dish = 2;
+}
+
+enum DishState {
+	UNKNOWN = 0;
+	CONNECTED = 1;
+	SEARCHING = 2;
+	BOOTING = 3;
+}

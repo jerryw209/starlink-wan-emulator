@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package SpaceX.API.Device;
+
+import "spacex/api/device/common.proto";
+import "spacex/api/device/wifi_config.proto";
+
+// Stub: wifi messages not needed for dish mock
+message WifiSetConfigRequest {
+	optional WifiConfig wifi_config = 1;
+}
+message WifiSetConfigResponse {}
+message WifiGetConfigRequest {}
+message WifiGetConfigResponse {}
+message WifiGetClientsRequest {}
+message WifiGetClientsResponse {}
+message WifiGetHistoryResponse {}
+message WifiNewClientConnectedEvent {}
+message WifiClient {}
+message WifiSetupRequest {}
+message WifiSetupResponse {}
+message WifiGetStatusResponse {}
+message WifiAuthenticateRequest {
+	optional SignedData challenge = 1;
+}
+message WifiAuthenticateResponse {}
+message WifiAccountBondingEvent {}
+message WifiGetPingMetricsRequest {}
+message WifiGetPingMetricsResponse {}
+message WifiGetDiagnosticsRequest {}
+message WifiGetDiagnosticsResponse {}

@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package SpaceX.API.Device;
+
+message DeviceInfo {
+	optional string id = 1;
+	optional string hardware_version = 2;
+	optional string software_version = 3;
+	optional string country_code = 4;
+	optional int32 utc_offset_s = 5;
+}
+
+message DeviceState {
+	optional uint64 uptime_s = 1;
+}
+
+message SignedData {
+	optional bytes data = 1;
+	optional bytes signature = 2;
+}
+
+message GetNextIdRequest {}
+
+message GetNextIdResponse {
+	optional uint64 id = 1;
+	optional uint64 epoch_id = 2;
+}
+
+message PingTarget {
+	optional string service = 1;
+	optional string location = 2;
+	optional string address = 3;
+}
+
+message PingResult {
+	optional PingTarget target = 3;
+	optional float dropRate = 1;
+	optional float latencyMs = 2;
+}
+
+message BondingChallenge {
+	optional string dish_id = 1;
+	optional string wifi_id = 2;
+	optional bytes nonce = 3;
+}
+
+message AuthenticateRequest {
+	optional SignedData challenge = 1;
+}
+
+message ChallengeResponse {
+	optional bytes signature = 1;
+	optional bytes certificate_chain = 2;
+}
+
+message NetworkInterface {
+	optional string name = 1;
+	optional RxStats rx_stats = 2;
+	optional TxStats tx_stats = 3;
+	oneof interface {
+		EthernetNetworkInterface ethernet = 1000;
+		WifiNetworkInterface wifi = 1001;
+	}
+	message RxStats {
+		optional uint64 bytes = 1;
+		optional uint64 packets = 2;
+		optional uint64 frame_errors = 3;
+	}
+	message TxStats {
+		optional uint64 bytes = 1;
+		optional uint64 packets = 2;
+	}
+}
+
+message EthernetNetworkInterface {
+	optional bool link_detected = 1;
+	optional uint32 speed_mbps = 2;
+	optional bool autonegotiation_on = 3;
+	optional Duplex duplex = 4;
+	enum Duplex {
+		UNKNOWN = 0;
+		HALF = 1;
+		FULL = 2;
+	}
+}
+
+message WifiNetworkInterface {
+	optional ThermalStatus thermal_status = 1;
+	message ThermalStatus {
+		optional uint32 level = 1;
+		optional uint32 temp = 2;
+	}
+}
+
+message LLAPosition {
+	optional double lat = 1;
+	optional double lon = 2;
+	optional double alt = 3;
+}
+
+message ECEFPosition {
+	optional double x = 1;
+	optional double y = 2;
+	optional double z = 3;
+}

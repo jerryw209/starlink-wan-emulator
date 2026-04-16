@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package SpaceX.API.Device;
+
+import "spacex/api/device/common.proto";
+
+// Stub: transceiver messages not needed for dish mock
+message TransceiverIFLoopbackTestRequest {
+	optional bool enable_if_loopback = 1;
+}
+message TransceiverIFLoopbackTestResponse {}
+message TransceiverGetStatusRequest {}
+message TransceiverGetStatusResponse {}
+message TransceiverGetTelemetryRequest {}
+message TransceiverGetTelemetryResponse {}

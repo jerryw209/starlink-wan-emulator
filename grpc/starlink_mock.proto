@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package starlink.mock;
+
+service DeviceService {
+  rpc GetStatus(StatusRequest) returns (StatusReply);
+  rpc Reboot(RebootRequest) returns (RebootReply);
+}
+
+message StatusRequest {
+  string client_id = 1;
+}
+
+message StatusReply {
+  string dish_id = 1;
+  string state = 2;
+  double down_mbps = 3;
+  double up_mbps = 4;
+  double latency_ms = 5;
+  uint32 uptime_sec = 6;
+}
+
+message RebootRequest {
+  string reason = 1;
+}
+
+message RebootReply {
+  bool accepted = 1;
+}

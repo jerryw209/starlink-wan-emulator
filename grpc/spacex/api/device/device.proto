@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package SpaceX.API.Device;
+
+import "spacex/api/common/status/status.proto";
+import "spacex/api/device/command.proto";
+import "spacex/api/device/common.proto";
+import "spacex/api/device/dish.proto";
+import "spacex/api/device/transceiver.proto";
+import "spacex/api/device/wifi.proto";
+
+message ToDevice {
+	oneof message {
+		Request request = 1;
+	}
+}
+
+message FromDevice {
+	oneof message {
+		Response response = 1;
+		Event event = 2;
+	}
+}
+
+message Request {
+	optional uint64 id = 1;
+	optional uint64 epoch_id = 14;
+	optional string target_id = 13;
+	oneof request {
+		SignedData signed_request = 15;
+		GetNextIdRequest get_next_id = 1006;
+		AuthenticateRequest authenticate = 1005;
+		EnableFlowRequest enable_flow = 1018;
+		FactoryResetRequest factory_reset = 1011;
+		GetDeviceInfoRequest get_device_info = 1008;
+		GetHistoryRequest get_history = 1007;
+		GetLogRequest get_log = 1012;
+		GetNetworkInterfacesRequest get_network_interfaces = 1015;
+		GetPingRequest get_ping = 1009;
+		PingHostRequest ping_host = 1016;
+		GetStatusRequest get_status = 1004;
+		RebootRequest reboot = 1001;
+		SetSkuRequest set_sku = 1013;
+		SetTrustedKeysRequest set_trusted_keys = 1010;
+		SpeedTestRequest speed_test = 1003;
+		UpdateRequest update = 1014;
+		GetLocationRequest get_location = 1017;
+		GetHeapDumpRequest get_heap_dump = 1019;
+		RestartControlRequest restart_control = 1020;
+		FuseRequest fuse = 1021;
+		DishStowRequest dish_stow = 2002;
+		DishGetContextRequest dish_get_context = 2003;
+		DishGetObstructionMapRequest dish_get_obstruction_map = 2008;
+		DishEmcRequest dish_emc = 2007;
+		TransceiverIFLoopbackTestRequest transceiver_if_loopback_test = 4001;
+		TransceiverGetStatusRequest transceiver_get_status = 4003;
+		TransceiverGetTelemetryRequest transceiver_get_telemetry = 4004;
+		WifiGetClientsRequest wifi_get_clients = 3002;
+		WifiGetDiagnosticsRequest wifi_get_diagnostics = 3008;
+		WifiGetPingMetricsRequest wifi_get_ping_metrics = 3007;
+		WifiSetConfigRequest wifi_set_config = 3001;
+		WifiGetConfigRequest wifi_get_config = 3009;
+		WifiSetupRequest wifi_setup = 3003;
+	}
+}
+
+message Response {
+	optional uint64 id = 1;
+	optional SpaceX.API.Status.Status status = 2;
+	optional uint64 api_version = 3;
+	oneof response {
+		GetNextIdResponse get_next_id = 1006;
+		EnableFlowResponse enable_flow = 1018;
+		FactoryResetResponse factory_reset = 1011;
+		GetDeviceInfoResponse get_device_info = 1004;
+		GetLogResponse get_log = 1012;
+		GetNetworkInterfacesResponse get_network_interfaces = 1015;
+		GetPingResponse get_ping = 1009;
+		PingHostResponse ping_host = 1016;
+		RebootResponse reboot = 1001;
+		SpeedTestResponse speed_test = 1003;
+		SetSkuResponse set_sku = 1013;
+		SetTrustedKeysResponse set_trusted_keys = 1010;
+		UpdateResponse update = 1014;
+		GetLocationResponse get_location = 1017;
+		GetHeapDumpResponse get_heap_dump = 1019;
+		RestartControlResponse restart_control = 1020;
+		FuseResponse fuse = 1021;
+		DishAuthenticateResponse dish_authenticate = 2005;
+		DishGetContextResponse dish_get_context = 2003;
+		DishGetHistoryResponse dish_get_history = 2006;
+		DishGetStatusResponse dish_get_status = 2004;
+		DishGetObstructionMapResponse dish_get_obstruction_map = 2008;
+		DishStowResponse dish_stow = 2002;
+		DishEmcResponse dish_emc = 2007;
+		TransceiverIFLoopbackTestResponse transceiver_if_loopback_test = 4001;
+		TransceiverGetStatusResponse transceiver_get_status = 4003;
+		TransceiverGetTelemetryResponse transceiver_get_telemetry = 4004;
+		WifiAuthenticateResponse wifi_authenticate = 3005;
+		WifiGetClientsResponse wifi_get_clients = 3002;
+		WifiGetDiagnosticsResponse wifi_get_diagnostics = 3008;
+		WifiGetHistoryResponse wifi_get_history = 3006;
+		WifiGetPingMetricsResponse wifi_get_ping_metrics = 3007;
+		WifiGetStatusResponse wifi_get_status = 3004;
+		WifiSetConfigResponse wifi_set_config = 3001;
+		WifiGetConfigResponse wifi_get_config = 3009;
+		WifiSetupResponse wifi_setup = 3003;
+	}
+}
+
+message Event {
+	oneof event {
+		WifiNewClientConnectedEvent wifi_new_client_connected = 3001;
+		WifiAccountBondingEvent wifi_account_bonding = 3002;
+	}
+}
+
+service Device {
+	rpc Handle (Request) returns (Response);
+	rpc Stream (stream ToDevice) returns (stream FromDevice);
+}
+
+// Minimal message stubs for request/response types not in other files
+message EnableFlowRequest {
+	optional string name = 1;
+	optional uint32 duration_h = 2;
+}
+message EnableFlowResponse {}
+message FactoryResetRequest {}
+message FactoryResetResponse {}
+message FuseRequest {}
+message FuseResponse {}
+message GetHistoryRequest {}
+message GetLogRequest {}
+message GetLogResponse {
+	optional string syslog = 1;
+	optional string offline_log = 2;
+}
+message GetPingRequest {}
+message GetPingResponse {
+	repeated GetPingResponse.ResultsEntry results = 1;
+	message ResultsEntry {
+		optional string key = 1;
+		optional PingResult value = 2;
+	}
+}
+message PingHostRequest {
+	optional string address = 3;
+}
+message PingHostResponse {
+	optional PingResult result = 1;
+}
+message GetStatusRequest {}
+message RebootRequest {}
+message RebootResponse {}
+message SpeedTestRequest {}
+message SpeedTestResponse {
+	optional float download_bps = 1;
+	optional float upload_bps = 2;
+	optional float latency_s = 3;
+	optional float download_mbps = 4;
+	optional float upload_mbps = 5;
+	optional float latency_ms = 6;
+}
+message GetDeviceInfoRequest {}
+message GetDeviceInfoResponse {
+	optional DeviceInfo device_info = 1;
+}
+message SetTrustedKeysRequest {
+	repeated PublicKey keys = 1;
+}
+message SetTrustedKeysResponse {}
+message SetSkuRequest {
+	optional string sku = 1;
+	optional string country_code = 2;
+	optional bool apply_country_code = 4;
+}
+message SetSkuResponse {}
+message UpdateRequest {}
+message UpdateResponse {}
+message RestartControlRequest {}
+message RestartControlResponse {}
+message GetNetworkInterfacesRequest {}
+message GetNetworkInterfacesResponse {
+	repeated NetworkInterface network_interfaces = 1006;
+}
+message GetHeapDumpRequest {}
+message GetHeapDumpResponse {
+	optional string heap_dump = 1;
+}
+message GetLocationRequest {}
+message GetLocationResponse {
+	optional LLAPosition lla = 1;
+	optional ECEFPosition ecef = 2;
+}
+message DishEmcRequest {
+	optional double theta = 1;
+	optional double phi = 2;
+}
+message DishEmcResponse {}
