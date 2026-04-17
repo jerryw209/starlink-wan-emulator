@@ -64,6 +64,8 @@ start_wan1() {
 
 stop_wan1() {
   echo "━━━ 停止 WAN1 ($WAN1_IFACE) ━━━"
+  iptables -D FORWARD -i "$WAN1_IFACE" -j DROP 2>/dev/null || true
+  rm -f /run/starlink1-scene
   "$SCRIPT_DIR/scripts/teardown_wan_emu.sh" "$WAN1_IFACE"
   echo ""
 }
@@ -76,6 +78,8 @@ start_wan2() {
 
 stop_wan2() {
   echo "━━━ 停止 WAN2 ($WAN2_IFACE, namespace) ━━━"
+  ip netns exec starlink2 iptables -D FORWARD -i "$WAN2_IFACE" -j DROP 2>/dev/null || true
+  rm -f /run/starlink2-scene
   "$SCRIPT_DIR/scripts/teardown_wan2_emu.sh" "$WAN2_IFACE"
   echo ""
 }
@@ -198,7 +202,41 @@ clear_wan2() {
   clear_iface "$WAN2_IFACE" "starlink2"
 }
 
-# ── 切換場景（重啟 gRPC server）──
+# ── 場景流量控制 ──
+# DISABLED 場景封鎖轉發流量（DHCP + gRPC 不受影響，因為走 INPUT 鏈）
+apply_scene_traffic() {
+  local iface="$1" scene="$2" ns="${3:-}"
+  local cmd_prefix=""
+  [[ -n "$ns" ]] && cmd_prefix="ip netns exec $ns"
+
+  case "$scene" in
+    blocked_area|no_account|too_far|invalid_country|stowed|searching)
+      # 清除 netem
+      $cmd_prefix tc qdisc del dev "$iface" root 2>/dev/null || true
+      # 封鎖轉發
+      $cmd_prefix iptables -D FORWARD -i "$iface" -j DROP 2>/dev/null || true
+      $cmd_prefix iptables -I FORWARD -i "$iface" -j DROP
+      echo "  流量: ✗ 已封鎖（$scene — 無法上網）"
+      ;;
+    obstructed)
+      # 移除封鎖
+      $cmd_prefix iptables -D FORWARD -i "$iface" -j DROP 2>/dev/null || true
+      # 高掉包模擬遮擋
+      $cmd_prefix tc qdisc del dev "$iface" root 2>/dev/null || true
+      $cmd_prefix tc qdisc add dev "$iface" root netem delay 80ms 40ms distribution normal loss 75%
+      echo "  流量: ⚠ 嚴重損傷（delay=80ms jitter=40ms loss=75%）"
+      ;;
+    connected|*)
+      # 移除封鎖
+      $cmd_prefix iptables -D FORWARD -i "$iface" -j DROP 2>/dev/null || true
+      # 清除 netem
+      $cmd_prefix tc qdisc del dev "$iface" root 2>/dev/null || true
+      echo "  流量: ✓ 正常"
+      ;;
+  esac
+}
+
+# ── 切換場景（重啟 gRPC server + 流量控制）──
 scene_wan1() {
   local scene="$1"
   echo "━━━ WAN1 切換場景: $scene ━━━"
@@ -214,6 +252,8 @@ scene_wan1() {
   GRPC_PID=$!
   echo "$GRPC_PID" > /run/starlink1-grpc.pid
   echo "  gRPC 已重啟 (PID $GRPC_PID, scene=$scene)"
+  apply_scene_traffic "$WAN1_IFACE" "$scene"
+  echo "$scene" > /run/starlink1-scene
 }
 
 scene_wan2() {
@@ -231,6 +271,8 @@ scene_wan2() {
   GRPC_PID=$!
   echo "$GRPC_PID" > /run/starlink2-grpc.pid
   echo "  gRPC 已重啟 (PID $GRPC_PID, scene=$scene)"
+  apply_scene_traffic "$WAN2_IFACE" "$scene" "starlink2"
+  echo "$scene" > /run/starlink2-scene
 }
 
 ACTION="${1:-}"
@@ -272,6 +314,24 @@ case "$ACTION" in
     show_impair "$WAN1_IFACE"
     if ip netns list 2>/dev/null | grep -q starlink2; then
       show_impair "$WAN2_IFACE" "starlink2"
+    fi
+    echo ""
+    echo "【場景】"
+    S1=$(cat /run/starlink1-scene 2>/dev/null || echo "connected")
+    echo -n "  WAN1: $S1"
+    if iptables -C FORWARD -i "$WAN1_IFACE" -j DROP 2>/dev/null; then
+      echo " (流量已封鎖)"
+    else
+      echo ""
+    fi
+    if ip netns list 2>/dev/null | grep -q starlink2; then
+      S2=$(cat /run/starlink2-scene 2>/dev/null || echo "connected")
+      echo -n "  WAN2: $S2"
+      if ip netns exec starlink2 iptables -C FORWARD -i "$WAN2_IFACE" -j DROP 2>/dev/null; then
+        echo " (流量已封鎖)"
+      else
+        echo ""
+      fi
     fi
     echo ""
     ;;

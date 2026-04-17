@@ -182,13 +182,15 @@ sudo ./starlink.sh scene all connected
 
 可用場景：
 
-| 場景名稱 | DishState | DisablementCode | 說明 |
-|----------|-----------|-----------------|------|
-| `connected` | CONNECTED | DISABLEMENT_OKAY | 正常連線（預設） |
-| `blocked_area` | DISABLED | BLOCKED_AREA | 禁止區域 |
-| `no_account` | DISABLED | NO_ACTIVE_ACCOUNT | 無有效帳號 |
-| `too_far` | DISABLED | TOO_FAR_FROM_SERVICE_ADDRESS | 距離服務地址太遠 |
-| `invalid_country` | DISABLED | INVALID_COUNTRY | 無效國家 |
-| `searching` | SEARCHING | DISABLEMENT_OKAY | 搜尋衛星中 |
-| `stowed` | STOWED | DISABLEMENT_OKAY | 天線收起 |
-| `obstructed` | OBSTRUCTED | DISABLEMENT_OKAY | 遮擋 |
+| 場景名稱 | DishState | DisablementCode | 流量效果 | 說明 |
+|----------|-----------|-----------------|----------|------|
+| `connected` | CONNECTED | DISABLEMENT_OKAY | ✓ 正常 | 正常連線（預設） |
+| `blocked_area` | DISABLED | BLOCKED_AREA | ✗ 封鎖 | 禁止區域 |
+| `no_account` | DISABLED | NO_ACTIVE_ACCOUNT | ✗ 封鎖 | 無有效帳號 |
+| `too_far` | DISABLED | TOO_FAR_FROM_SERVICE_ADDRESS | ✗ 封鎖 | 距離服務地址太遠 |
+| `invalid_country` | DISABLED | INVALID_COUNTRY | ✗ 封鎖 | 無效國家 |
+| `searching` | SEARCHING | DISABLEMENT_OKAY | ✗ 封鎖 | 搜尋衛星中 |
+| `stowed` | STOWED | DISABLEMENT_OKAY | ✗ 封鎖 | 天線收起 |
+| `obstructed` | OBSTRUCTED | DISABLEMENT_OKAY | ⚠ 75% 掉包 | 遮擋（間歇連線） |
+
+> **注意：** 切換場景時會同時控制實際網路流量。DISABLED/搜尋/收起場景會封鎖 WAN 轉發流量（iptables FORWARD DROP），路由器無法上網但仍可查詢 gRPC。切回 `connected` 恢復正常。
