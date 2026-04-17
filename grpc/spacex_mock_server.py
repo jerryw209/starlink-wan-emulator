@@ -30,6 +30,7 @@ from spacex.api.device import device_pb2 as device_pb2
 from spacex.api.device import device_pb2_grpc as device_pb2_grpc
 from spacex.api.device import common_pb2 as common_pb2
 from spacex.api.device import dish_pb2 as dish_pb2
+from spacex.api.common.status import status_pb2 as status_pb2
 
 # Scene presets: (DishState, DisablementCode, throughput_down, throughput_up, latency, drop_rate)
 SCENES = {
@@ -112,6 +113,8 @@ class DeviceServicer(device_pb2_grpc.DeviceServicer):
         """Dispatch incoming Request to the appropriate handler."""
 
         req_field = request.WhichOneof("request")
+        peer = context.peer() or "unknown"
+        print(f"[gRPC] {peer} -> Handle(req_type={req_field}, id={request.id})", flush=True)
 
         if req_field == "get_status":
             return self._get_status(request)
@@ -126,6 +129,7 @@ class DeviceServicer(device_pb2_grpc.DeviceServicer):
         elif req_field == "dish_get_obstruction_map":
             return self._get_obstruction_map(request)
         else:
+            print(f"[gRPC] UNIMPLEMENTED: {req_field} from {peer}", flush=True)
             context.set_code(grpc.StatusCode.UNIMPLEMENTED)
             context.set_details(f"Request type '{req_field}' not implemented in mock")
             return device_pb2.Response()
@@ -135,42 +139,50 @@ class DeviceServicer(device_pb2_grpc.DeviceServicer):
     def _get_status(self, request):
         uptime = int(time.time() - self.start_time)
         s = self.scene
+
+        # Build DishGetStatusResponse
+        dish_status = dish_pb2.DishGetStatusResponse(
+            device_info=common_pb2.DeviceInfo(
+                id="ut01000000-00000000-00000000",
+                hardware_version="rev3_proto2",
+                software_version="mock-2024.01.01",
+                country_code="TW",
+            ),
+            device_state=common_pb2.DeviceState(
+                uptime_s=uptime,
+            ),
+            state=s["state"],
+            alerts=dish_pb2.DishAlerts(
+                motors_stuck=False,
+                thermal_throttle=False,
+                thermal_shutdown=False,
+                mast_not_near_vertical=False,
+                unexpected_location=False,
+                slow_ethernet_speeds=False,
+            ),
+            snr=9.0,
+            seconds_to_first_nonempty_slot=0.0,
+            pop_ping_drop_rate=s["drop_rate"],
+            downlink_throughput_bps=s["down_bps"],
+            uplink_throughput_bps=s["up_bps"],
+            pop_ping_latency_ms=s["latency_ms"],
+            obstruction_stats=dish_pb2.DishObstructionStats(
+                currently_obstructed=(s["state"] == dish_pb2.OBSTRUCTED),
+                fraction_obstructed=0.0,
+                valid_s=43200.0,
+            ),
+            stow_requested=(s["state"] == dish_pb2.STOWED),
+        )
+
+        # Only set disablement_code for non-connected scenes
+        # (connected = leave as default 0, matching real Starlink behavior)
+        if s["disablement_code"] != dish_pb2.DISABLEMENT_OKAY:
+            dish_status.disablement_code = s["disablement_code"]
+
         return device_pb2.Response(
             id=request.id,
             api_version=4,
-            dish_get_status=dish_pb2.DishGetStatusResponse(
-                device_info=common_pb2.DeviceInfo(
-                    id="ut01000000-00000000-00000000",
-                    hardware_version="rev3_proto2",
-                    software_version="mock-2024.01.01",
-                    country_code="TW",
-                ),
-                device_state=common_pb2.DeviceState(
-                    uptime_s=uptime,
-                ),
-                state=s["state"],
-                disablement_code=s["disablement_code"],
-                alerts=dish_pb2.DishAlerts(
-                    motors_stuck=False,
-                    thermal_throttle=False,
-                    thermal_shutdown=False,
-                    mast_not_near_vertical=False,
-                    unexpected_location=False,
-                    slow_ethernet_speeds=False,
-                ),
-                snr=9.0,
-                seconds_to_first_nonempty_slot=0.0,
-                pop_ping_drop_rate=s["drop_rate"],
-                downlink_throughput_bps=s["down_bps"],
-                uplink_throughput_bps=s["up_bps"],
-                pop_ping_latency_ms=s["latency_ms"],
-                obstruction_stats=dish_pb2.DishObstructionStats(
-                    currently_obstructed=(s["state"] == dish_pb2.OBSTRUCTED),
-                    fraction_obstructed=0.0,
-                    valid_s=43200.0,
-                ),
-                stow_requested=(s["state"] == dish_pb2.STOWED),
-            ),
+            dish_get_status=dish_status,
         )
 
     def _get_device_info(self, request):
