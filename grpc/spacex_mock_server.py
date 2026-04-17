@@ -43,7 +43,7 @@ SCENES = {
         "drop_rate": 0.0,
     },
     "blocked_area": {
-        "state": dish_pb2.DISABLED,
+        "state": dish_pb2.CONNECTED,
         "disablement_code": dish_pb2.BLOCKED_AREA,
         "down_bps": 0.0,
         "up_bps": 0.0,
@@ -51,7 +51,7 @@ SCENES = {
         "drop_rate": 1.0,
     },
     "no_account": {
-        "state": dish_pb2.DISABLED,
+        "state": dish_pb2.CONNECTED,
         "disablement_code": dish_pb2.NO_ACTIVE_ACCOUNT,
         "down_bps": 0.0,
         "up_bps": 0.0,
@@ -59,7 +59,7 @@ SCENES = {
         "drop_rate": 1.0,
     },
     "too_far": {
-        "state": dish_pb2.DISABLED,
+        "state": dish_pb2.CONNECTED,
         "disablement_code": dish_pb2.TOO_FAR_FROM_SERVICE_ADDRESS,
         "down_bps": 0.0,
         "up_bps": 0.0,
@@ -67,7 +67,7 @@ SCENES = {
         "drop_rate": 1.0,
     },
     "invalid_country": {
-        "state": dish_pb2.DISABLED,
+        "state": dish_pb2.CONNECTED,
         "disablement_code": dish_pb2.INVALID_COUNTRY,
         "down_bps": 0.0,
         "up_bps": 0.0,
