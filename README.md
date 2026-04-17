@@ -165,3 +165,30 @@ Starlink 典型參數參考：
 | 正常 | 40ms | 15ms | 0.5% |
 | 擁塞 | 80ms | 30ms | 2% |
 | 惡劣天氣 | 120ms | 50ms | 5% |
+
+## 場景模擬（DisablementCode）
+
+切換 Starlink dish 的 gRPC 回應狀態，測試路由器對各種 Starlink 異常的處理：
+
+```bash
+# 切換場景（會重啟 gRPC server）
+sudo ./starlink.sh scene wan1 blocked_area
+sudo ./starlink.sh scene wan2 no_account
+sudo ./starlink.sh scene all searching
+
+# 恢復正常
+sudo ./starlink.sh scene all connected
+```
+
+可用場景：
+
+| 場景名稱 | DishState | DisablementCode | 說明 |
+|----------|-----------|-----------------|------|
+| `connected` | CONNECTED | DISABLEMENT_OKAY | 正常連線（預設） |
+| `blocked_area` | DISABLED | BLOCKED_AREA | 禁止區域 |
+| `no_account` | DISABLED | NO_ACTIVE_ACCOUNT | 無有效帳號 |
+| `too_far` | DISABLED | TOO_FAR_FROM_SERVICE_ADDRESS | 距離服務地址太遠 |
+| `invalid_country` | DISABLED | INVALID_COUNTRY | 無效國家 |
+| `searching` | SEARCHING | DISABLEMENT_OKAY | 搜尋衛星中 |
+| `stowed` | STOWED | DISABLEMENT_OKAY | 天線收起 |
+| `obstructed` | OBSTRUCTED | DISABLEMENT_OKAY | 遮擋 |

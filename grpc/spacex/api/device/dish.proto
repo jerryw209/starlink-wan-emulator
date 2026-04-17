@@ -49,6 +49,8 @@ message DishGetStatusResponse {
 	optional float pop_ping_latency_ms = 1009;
 	optional DishObstructionStats obstruction_stats = 1004;
 	optional bool stow_requested = 1010;
+	optional DisablementCode disablement_code = 1011;
+	optional DishOutage outage = 1014;
 }
 
 message DishGetObstructionMapRequest {}
@@ -86,4 +88,45 @@ enum DishState {
 	CONNECTED = 1;
 	SEARCHING = 2;
 	BOOTING = 3;
+	STOWED = 4;
+	THERMAL_SHUTDOWN = 5;
+	NO_SATS = 6;
+	OBSTRUCTED = 7;
+	NO_DOWNLINK = 8;
+	NO_PINGS = 9;
+	DISABLED = 10;
+}
+
+enum DisablementCode {
+	DISABLEMENT_UNKNOWN = 0;
+	DISABLEMENT_OKAY = 1;
+	NO_ACTIVE_ACCOUNT = 2;
+	TOO_FAR_FROM_SERVICE_ADDRESS = 3;
+	IN_OCEAN = 4;
+	INVALID_COUNTRY = 5;
+	BLOCKED_COUNTRY = 6;
+	DATA_OVERAGE_SANDBOX_POLICY = 7;
+	BLOCKED_AREA = 8;
+}
+
+message DishOutage {
+	enum Cause {
+		UNKNOWN = 0;
+		BOOTING = 1;
+		STOWED = 2;
+		THERMAL_SHUTDOWN = 3;
+		NO_SCHEDULE = 4;
+		NO_SATS = 5;
+		OBSTRUCTED = 6;
+		NO_DOWNLINK = 7;
+		NO_PINGS = 8;
+		ACTUATOR_ACTIVITY = 9;
+		CABLE_TEST = 10;
+		SLEEPING = 11;
+		MOVING_WHILE_NOT_ALLOWED = 12;
+	}
+	optional Cause cause = 1;
+	optional int64 start_timestamp_ns = 2;
+	optional uint64 duration_ns = 3;
+	optional bool did_switch = 4;
 }

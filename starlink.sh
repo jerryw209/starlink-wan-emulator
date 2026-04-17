@@ -22,7 +22,7 @@ WAN2_IFACE="enxd03745fef729"
 usage() {
   echo "Starlink WAN Emulator"
   echo ""
-  echo "用法: sudo $0 {start|stop|restart|status|impair|clear} [wan1|wan2]"
+  echo "用法: sudo $0 {start|stop|restart|status|impair|clear|scene} [wan1|wan2]"
   echo ""
   echo "  start   [wan1|wan2]  啟動模擬（預設全部）"
   echo "  stop    [wan1|wan2]  停止模擬（預設全部）"
@@ -31,6 +31,11 @@ usage() {
   echo "  impair  [wan1|wan2] [DELAY_MS] [JITTER_MS] [LOSS%]"
   echo "                       加入延遲/抖動/掉包（預設: 40ms 15ms 0.5%）"
   echo "  clear   [wan1|wan2]  移除延遲/抖動/掉包"
+  echo "  scene   [wan1|wan2] <SCENE_NAME>"
+  echo "                       切換 Starlink 場景（重啟 gRPC）"
+  echo "                       場景: connected, blocked_area, no_account,"
+  echo "                              too_far, invalid_country, searching,"
+  echo "                              stowed, obstructed"
   exit 1
 }
 
@@ -193,6 +198,41 @@ clear_wan2() {
   clear_iface "$WAN2_IFACE" "starlink2"
 }
 
+# ── 切換場景（重啟 gRPC server）──
+scene_wan1() {
+  local scene="$1"
+  echo "━━━ WAN1 切換場景: $scene ━━━"
+  # Kill old gRPC
+  if [[ -f /run/starlink1-grpc.pid ]]; then
+    kill "$(cat /run/starlink1-grpc.pid)" 2>/dev/null || true
+    rm -f /run/starlink1-grpc.pid
+  fi
+  sleep 1
+  cd "$GRPC_DIR"
+  nohup setsid python3 spacex_mock_server.py --listen 192.168.100.1:9200 --scene "$scene" \
+    </dev/null >/var/log/starlink1-grpc.log 2>&1 &
+  GRPC_PID=$!
+  echo "$GRPC_PID" > /run/starlink1-grpc.pid
+  echo "  gRPC 已重啟 (PID $GRPC_PID, scene=$scene)"
+}
+
+scene_wan2() {
+  local scene="$1"
+  echo "━━━ WAN2 切換場景: $scene ━━━"
+  # Kill old gRPC
+  if [[ -f /run/starlink2-grpc.pid ]]; then
+    kill "$(cat /run/starlink2-grpc.pid)" 2>/dev/null || true
+    rm -f /run/starlink2-grpc.pid
+  fi
+  sleep 1
+  GRPC_ABS="$(realpath "$GRPC_DIR")"
+  nohup ip netns exec starlink2 bash -c "cd '$GRPC_ABS' && setsid python3 spacex_mock_server.py --listen 192.168.100.1:9200 --scene '$scene'" \
+    </dev/null >/var/log/starlink2-grpc.log 2>&1 &
+  GRPC_PID=$!
+  echo "$GRPC_PID" > /run/starlink2-grpc.pid
+  echo "  gRPC 已重啟 (PID $GRPC_PID, scene=$scene)"
+}
+
 ACTION="${1:-}"
 TARGET="${2:-all}"
 DELAY="${3:-40}"
@@ -248,6 +288,19 @@ case "$ACTION" in
       wan1) clear_wan1 ;;
       wan2) clear_wan2 ;;
       all)  clear_wan1; clear_wan2 ;;
+      *)    usage ;;
+    esac
+    ;;
+  scene)
+    SCENE_NAME="${3:-}"
+    if [[ -z "$SCENE_NAME" ]]; then
+      echo "請指定場景名稱: connected, blocked_area, no_account, too_far, invalid_country, searching, stowed, obstructed"
+      exit 1
+    fi
+    case "$TARGET" in
+      wan1) scene_wan1 "$SCENE_NAME" ;;
+      wan2) scene_wan2 "$SCENE_NAME" ;;
+      all)  scene_wan1 "$SCENE_NAME"; scene_wan2 "$SCENE_NAME" ;;
       *)    usage ;;
     esac
     ;;
