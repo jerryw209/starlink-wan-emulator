@@ -9,13 +9,23 @@ Default listen address: 192.168.100.1:9200
 
 Scenes:
   connected      - Normal connected state (default)
-  blocked_area   - Disabled: blocked area
-  no_account     - Disabled: no active account
-  too_far        - Disabled: too far from service address
-  invalid_country- Disabled: invalid country
+  no_account     - Disablement: no active account
+  too_far        - Disablement: too far from service address
+  in_ocean       - Disablement: in ocean
+  blocked_country- Disablement: blocked country
+  data_overage_sandbox - Disablement: data overage sandbox policy
+  cell_disabled  - Disablement: cell is disabled
+  roam_restricted- Disablement: roam restricted
+  unknown_location - Disablement: unknown location
+  account_disabled - Disablement: account disabled
+  unsupported_version - Disablement: unsupported version
+  moving_too_fast- Disablement: moving too fast for policy
+  aviation_flyover - Disablement: under aviation flyover limits
+  blocked_area   - Disablement: blocked area
   searching      - Dish searching for satellites
   stowed         - Dish stowed
   obstructed     - Dish obstructed
+  overage        - Bandwidth restricted due to data overage
 """
 import argparse
 import sys
@@ -42,14 +52,6 @@ SCENES = {
         "latency_ms": 42.0,
         "drop_rate": 0.0,
     },
-    "blocked_area": {
-        "state": dish_pb2.CONNECTED,
-        "disablement_code": dish_pb2.BLOCKED_AREA,
-        "down_bps": 0.0,
-        "up_bps": 0.0,
-        "latency_ms": 0.0,
-        "drop_rate": 1.0,
-    },
     "no_account": {
         "state": dish_pb2.CONNECTED,
         "disablement_code": dish_pb2.NO_ACTIVE_ACCOUNT,
@@ -66,9 +68,89 @@ SCENES = {
         "latency_ms": 0.0,
         "drop_rate": 1.0,
     },
-    "invalid_country": {
+    "in_ocean": {
         "state": dish_pb2.CONNECTED,
-        "disablement_code": dish_pb2.INVALID_COUNTRY,
+        "disablement_code": dish_pb2.IN_OCEAN,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "blocked_country": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.BLOCKED_COUNTRY,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "data_overage_sandbox": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.DATA_OVERAGE_SANDBOX_POLICY,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "cell_disabled": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.CELL_IS_DISABLED,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "roam_restricted": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.ROAM_RESTRICTED,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "unknown_location": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.UNKNOWN_LOCATION,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "account_disabled": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.ACCOUNT_DISABLED,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "unsupported_version": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.UNSUPPORTED_VERSION,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "moving_too_fast": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.MOVING_TOO_FAST_FOR_POLICY,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "aviation_flyover": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.UNDER_AVIATION_FLYOVER_LIMITS,
+        "down_bps": 0.0,
+        "up_bps": 0.0,
+        "latency_ms": 0.0,
+        "drop_rate": 1.0,
+    },
+    "blocked_area": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.BLOCKED_AREA,
         "down_bps": 0.0,
         "up_bps": 0.0,
         "latency_ms": 0.0,
@@ -97,6 +179,16 @@ SCENES = {
         "up_bps": 1000000.0,
         "latency_ms": 120.0,
         "drop_rate": 0.3,
+    },
+    "overage": {
+        "state": dish_pb2.CONNECTED,
+        "disablement_code": dish_pb2.DISABLEMENT_OKAY,
+        "down_bps": 5000000.0,
+        "up_bps": 1000000.0,
+        "latency_ms": 55.0,
+        "drop_rate": 0.01,
+        "dl_bandwidth_restricted": dish_pb2.OVERAGE_LIMIT,
+        "ul_bandwidth_restricted": dish_pb2.OVERAGE_LIMIT,
     },
 }
 
@@ -178,6 +270,12 @@ class DeviceServicer(device_pb2_grpc.DeviceServicer):
         # (connected = leave as default 0, matching real Starlink behavior)
         if s["disablement_code"] != dish_pb2.DISABLEMENT_OKAY:
             dish_status.disablement_code = s["disablement_code"]
+
+        # Bandwidth restriction (overage scene)
+        if "dl_bandwidth_restricted" in s:
+            dish_status.dl_bandwidth_restricted_reason = s["dl_bandwidth_restricted"]
+        if "ul_bandwidth_restricted" in s:
+            dish_status.ul_bandwidth_restricted_reason = s["ul_bandwidth_restricted"]
 
         return device_pb2.Response(
             id=request.id,

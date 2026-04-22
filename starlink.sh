@@ -33,9 +33,14 @@ usage() {
   echo "  clear   [wan1|wan2]  移除延遲/抖動/掉包"
   echo "  scene   [wan1|wan2] <SCENE_NAME>"
   echo "                       切換 Starlink 場景（重啟 gRPC）"
-  echo "                       場景: connected, blocked_area, no_account,"
-  echo "                              too_far, invalid_country, searching,"
-  echo "                              stowed, obstructed"
+  echo "                       場景: connected, no_account, too_far,"
+  echo "                              in_ocean, blocked_country,"
+  echo "                              data_overage_sandbox, cell_disabled,"
+  echo "                              roam_restricted, unknown_location,"
+  echo "                              account_disabled, unsupported_version,"
+  echo "                              moving_too_fast, aviation_flyover,"
+  echo "                              blocked_area, searching, stowed,"
+  echo "                              obstructed, overage"
   exit 1
 }
 
@@ -210,7 +215,7 @@ apply_scene_traffic() {
   [[ -n "$ns" ]] && cmd_prefix="ip netns exec $ns"
 
   case "$scene" in
-    blocked_area|no_account|too_far|invalid_country|stowed|searching)
+    no_account|too_far|in_ocean|blocked_country|data_overage_sandbox|cell_disabled|roam_restricted|unknown_location|account_disabled|unsupported_version|moving_too_fast|aviation_flyover|blocked_area|stowed|searching)
       # 清除 netem
       $cmd_prefix tc qdisc del dev "$iface" root 2>/dev/null || true
       # 封鎖轉發
@@ -225,6 +230,14 @@ apply_scene_traffic() {
       $cmd_prefix tc qdisc del dev "$iface" root 2>/dev/null || true
       $cmd_prefix tc qdisc add dev "$iface" root netem delay 80ms 40ms distribution normal loss 75%
       echo "  流量: ⚠ 嚴重損傷（delay=80ms jitter=40ms loss=75%）"
+      ;;
+    overage)
+      # 移除封鎖
+      $cmd_prefix iptables -D FORWARD -i "$iface" -j DROP 2>/dev/null || true
+      # 限速模擬 overage：低帶寬 + 延遲
+      $cmd_prefix tc qdisc del dev "$iface" root 2>/dev/null || true
+      $cmd_prefix tc qdisc add dev "$iface" root netem delay 55ms 10ms distribution normal rate 5mbit
+      echo "  流量: ⚠ 限速（overage — rate=5mbit delay=55ms）"
       ;;
     connected|*)
       # 移除封鎖
@@ -354,7 +367,12 @@ case "$ACTION" in
   scene)
     SCENE_NAME="${3:-}"
     if [[ -z "$SCENE_NAME" ]]; then
-      echo "請指定場景名稱: connected, blocked_area, no_account, too_far, invalid_country, searching, stowed, obstructed"
+      echo "請指定場景名稱:"
+      echo "  Disablement: no_account, too_far, in_ocean, blocked_country,"
+      echo "               data_overage_sandbox, cell_disabled, roam_restricted,"
+      echo "               unknown_location, account_disabled, unsupported_version,"
+      echo "               moving_too_fast, aviation_flyover, blocked_area"
+      echo "  其他: connected, searching, stowed, obstructed, overage"
       exit 1
     fi
     case "$TARGET" in

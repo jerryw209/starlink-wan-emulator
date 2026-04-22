@@ -51,6 +51,8 @@ message DishGetStatusResponse {
 	optional bool stow_requested = 1010;
 	optional DisablementCode disablement_code = 1011;
 	optional DishOutage outage = 1014;
+	optional BandwidthRestrictedReason dl_bandwidth_restricted_reason = 1026;
+	optional BandwidthRestrictedReason ul_bandwidth_restricted_reason = 1027;
 }
 
 message DishGetObstructionMapRequest {}
@@ -103,10 +105,29 @@ enum DisablementCode {
 	NO_ACTIVE_ACCOUNT = 2;
 	TOO_FAR_FROM_SERVICE_ADDRESS = 3;
 	IN_OCEAN = 4;
-	INVALID_COUNTRY = 5;
+	// 5 was INVALID_COUNTRY (removed)
 	BLOCKED_COUNTRY = 6;
 	DATA_OVERAGE_SANDBOX_POLICY = 7;
-	BLOCKED_AREA = 8;
+	CELL_IS_DISABLED = 8;
+	// 9 was UNLICENSED_COUNTRY (removed)
+	ROAM_RESTRICTED = 10;
+	UNKNOWN_LOCATION = 11;
+	ACCOUNT_DISABLED = 12;
+	UNSUPPORTED_VERSION = 13;
+	MOVING_TOO_FAST_FOR_POLICY = 14;
+	UNDER_AVIATION_FLYOVER_LIMITS = 15;
+	BLOCKED_AREA = 16;
+
+	reserved 5, 9;
+	reserved "INVALID_COUNTRY", "UNLICENSED_COUNTRY";
+}
+
+enum BandwidthRestrictedReason {
+	UNKNOWN_BANDWIDTH_REASON = 0;
+	NO_LIMIT = 1;
+	POLICY_LIMIT = 2;
+	USER_CUSTOM_LIMIT = 3;
+	OVERAGE_LIMIT = 4;
 }
 
 message DishOutage {

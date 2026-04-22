@@ -185,12 +185,22 @@ sudo ./starlink.sh scene all connected
 | 場景名稱 | DishState | DisablementCode | 流量效果 | 說明 |
 |----------|-----------|-----------------|----------|------|
 | `connected` | CONNECTED | DISABLEMENT_OKAY | ✓ 正常 | 正常連線（預設） |
-| `blocked_area` | DISABLED | BLOCKED_AREA | ✗ 封鎖 | 禁止區域 |
-| `no_account` | DISABLED | NO_ACTIVE_ACCOUNT | ✗ 封鎖 | 無有效帳號 |
-| `too_far` | DISABLED | TOO_FAR_FROM_SERVICE_ADDRESS | ✗ 封鎖 | 距離服務地址太遠 |
-| `invalid_country` | DISABLED | INVALID_COUNTRY | ✗ 封鎖 | 無效國家 |
+| `no_account` | CONNECTED | NO_ACTIVE_ACCOUNT (2) | ✗ 封鎖 | 無有效帳號 |
+| `too_far` | CONNECTED | TOO_FAR_FROM_SERVICE_ADDRESS (3) | ✗ 封鎖 | 距離服務地址太遠 |
+| `in_ocean` | CONNECTED | IN_OCEAN (4) | ✗ 封鎖 | 在海洋中 |
+| `blocked_country` | CONNECTED | BLOCKED_COUNTRY (6) | ✗ 封鎖 | 被封鎖國家 |
+| `data_overage_sandbox` | CONNECTED | DATA_OVERAGE_SANDBOX_POLICY (7) | ✗ 封鎖 | 數據超量沙盒策略 |
+| `cell_disabled` | CONNECTED | CELL_IS_DISABLED (8) | ✗ 封鎖 | Cell 已停用 |
+| `roam_restricted` | CONNECTED | ROAM_RESTRICTED (10) | ✗ 封鎖 | 漫遊受限 |
+| `unknown_location` | CONNECTED | UNKNOWN_LOCATION (11) | ✗ 封鎖 | 未知位置 |
+| `account_disabled` | CONNECTED | ACCOUNT_DISABLED (12) | ✗ 封鎖 | 帳號已停用 |
+| `unsupported_version` | CONNECTED | UNSUPPORTED_VERSION (13) | ✗ 封鎖 | 不支援的版本 |
+| `moving_too_fast` | CONNECTED | MOVING_TOO_FAST_FOR_POLICY (14) | ✗ 封鎖 | 移動太快 |
+| `aviation_flyover` | CONNECTED | UNDER_AVIATION_FLYOVER_LIMITS (15) | ✗ 封鎖 | 航空飛越限制 |
+| `blocked_area` | CONNECTED | BLOCKED_AREA (16) | ✗ 封鎖 | 禁止區域 |
 | `searching` | SEARCHING | DISABLEMENT_OKAY | ✗ 封鎖 | 搜尋衛星中 |
 | `stowed` | STOWED | DISABLEMENT_OKAY | ✗ 封鎖 | 天線收起 |
 | `obstructed` | OBSTRUCTED | DISABLEMENT_OKAY | ⚠ 75% 掉包 | 遮擋（間歇連線） |
+| `overage` | CONNECTED | DISABLEMENT_OKAY | ⚠ 限速 5Mbit | 流量超額限速 |
 
 > **注意：** 切換場景時會同時控制實際網路流量。DISABLED/搜尋/收起場景會封鎖 WAN 轉發流量（iptables FORWARD DROP），路由器無法上網但仍可查詢 gRPC。切回 `connected` 恢復正常。
